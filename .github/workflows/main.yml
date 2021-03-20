@@ -1,7 +1,7 @@
 on:
   workflow_dispatch:
   schedule:
-    cron: '0 0 * * 0'  # @weekly
+    - cron: '0 0 * * 0'  # @weekly
 
 jobs:
   main:
