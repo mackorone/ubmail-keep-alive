@@ -21,4 +21,7 @@ jobs:
           pip install -r requirements/requirements.txt
 
       - name: Run script
+        env:
+          UBIT_USERNAME: ${{ secrets.UBIT_USERNAME }}
+          UBIT_PASSWORD: ${{ secrets.UBIT_PASSWORD }}
         run: python script.py --webdriver-executable-path geckodriver
