@@ -21,4 +21,4 @@ jobs:
           pip install -r requirements/requirements.txt
 
       - name: Run script
-        run: python script --webdriver-executable-path geckodriver
+        run: python script.py --webdriver-executable-path geckodriver
