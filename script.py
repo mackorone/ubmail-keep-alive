@@ -30,7 +30,7 @@ def get_driver(executable_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="UBMail login script")
+    parser = argparse.ArgumentParser(description="UBmail login script")
     parser.add_argument("--webdriver-executable-path", required=True)
     args = parser.parse_args()
 
@@ -42,7 +42,7 @@ def main():
 
     logger.info("Starting WebDriver")
     with get_driver(args.webdriver_executable_path) as driver:
-        logger.info("Going to UBMail page")
+        logger.info("Going to UBmail page")
         driver.get("https://ubmail.buffalo.edu/cgi-bin/login.pl")
 
         logger.info("Waiting for redirect")
