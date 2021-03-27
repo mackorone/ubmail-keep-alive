@@ -1,4 +1,4 @@
-# ubmail-keep-alive
+# ubmail-keep-alive ![](https://github.com/mackorone/ubmail-keep-alive/actions/workflows/main.yml/badge.svg)
 
 > Don't let my `buffalo.edu` email address get garbage collected
 
