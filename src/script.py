@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import contextlib
 import logging
 import os
 
+from plants.committer import Committer
+from plants.environment import Environment
+from plants.external import allow_external_calls
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
@@ -58,6 +62,17 @@ def main():
         wait.until(EC.title_contains(f"{username}@buffalo.edu"))
         logger.info("Success")
 
+    # GitHub automatically disables actions for inactive repos. To prevent
+    # that, write the timestamp of the last successful run back to the repo.
+    logger.info("Writing last success file")
+    root = Environment.get_repo_root()
+    path = root / "last_success.txt"
+    now = datetime.datetime.now()
+    with open(path, "w") as f:
+        f.write(f"{now}\n")
+    Committer.commit_and_push_if_github_actions()
+
 
 if __name__ == "__main__":
+    allow_external_calls()
     main()
