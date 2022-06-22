@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 
 import argparse
-import datetime
 import contextlib
+import datetime
 import logging
 import os
+from typing import Iterator
 
-from plants.committer import Committer
-from plants.environment import Environment
-from plants.external import allow_external_calls
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from plants.committer import Committer
+from plants.environment import Environment
+from plants.external import allow_external_calls
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def get_driver(executable_path):
+def get_driver(executable_path: str) -> Iterator[webdriver.Firefox]:
     options = Options()
     options.headless = True
     driver = webdriver.Firefox(
@@ -33,7 +34,7 @@ def get_driver(executable_path):
         driver.quit()
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="UBmail login script")
     parser.add_argument("--webdriver-executable-path", required=True)
     args = parser.parse_args()
