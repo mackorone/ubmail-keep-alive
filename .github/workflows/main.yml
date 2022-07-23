@@ -8,12 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
@@ -24,4 +26,4 @@ jobs:
         env:
           UBIT_USERNAME: ${{ secrets.UBIT_USERNAME }}
           UBIT_PASSWORD: ${{ secrets.UBIT_PASSWORD }}
-        run: python script.py --webdriver-executable-path geckodriver
+        run: python src/script.py --webdriver-executable-path geckodriver
