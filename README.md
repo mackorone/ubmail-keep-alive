@@ -30,4 +30,5 @@ stored as repository secrets and passed to the script as environment variables.
 
 If you want to keep *your* `buffalo.edu` email address alive:
 1. Fork this repository
-1. Add `UBIT_USERNAME` and `UBIT_PASSWORD` repository secrets
+1. Add `UBIT_USERNAME` and `UBIT_PASSWORD` repository secrets (via `Settings` > `Secrets` > `Actions`)
+1. Enable `GITHUB_TOKEN` "Read and write permissions" (via `Settings` > `Actions` > `General` > `Workflow permissions`)
