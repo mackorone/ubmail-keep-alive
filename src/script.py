@@ -9,7 +9,8 @@ from typing import Iterator
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 
 from plants.committer import Committer
@@ -21,12 +22,14 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def get_driver(executable_path: str) -> Iterator[webdriver.Firefox]:
+def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Firefox]:
+    service = Service(executable_path=executable_path)
     options = Options()
-    options.headless = True
+    options.headless = headless
+    # pyre-fixme[28]
     driver = webdriver.Firefox(
+        service=service,
         options=options,
-        executable_path=executable_path,
     )
     try:
         yield driver
@@ -34,9 +37,16 @@ def get_driver(executable_path: str) -> Iterator[webdriver.Firefox]:
         driver.quit()
 
 
+def ensure_attribute(element: WebElement, attribute: str, expected_value: str) -> None:
+    actual_value = element.get_attribute(attribute)
+    if actual_value != expected_value:
+        raise RuntimeError("Wrong {attribute}: {expected_value=} vs {actual_value=}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="UBmail login script")
     parser.add_argument("--webdriver-executable-path", required=True)
+    parser.add_argument("--no-headless", action="store_true")
     args = parser.parse_args()
 
     logger.info("Reading credentials")
@@ -46,7 +56,10 @@ def main() -> None:
     assert password
 
     logger.info("Starting WebDriver")
-    with get_driver(args.webdriver_executable_path) as driver:
+    with get_driver(
+        args.webdriver_executable_path,
+        headless=(not args.no_headless),
+    ) as driver:
         logger.info("Going to UBmail page")
         driver.get("https://ubmail.buffalo.edu/cgi-bin/login.pl")
 
@@ -60,7 +73,27 @@ def main() -> None:
         driver.find_element_by_id("login-button").click()
 
         logger.info("Waiting for authentication")
-        wait.until(EC.title_contains(f"{username}@buffalo.edu"))
+        wait.until(lambda x: x.find_element_by_id("i0118"))
+
+        password_input = driver.find_element_by_id("i0118")
+        ensure_attribute(password_input, "name", "passwd")
+        ensure_attribute(password_input, "type", "password")
+        ensure_attribute(password_input, "placeholder", "Password")
+        password_input.send_keys(password)
+
+        sign_in_button = driver.find_element_by_id("idSIButton9")
+        ensure_attribute(sign_in_button, "type", "submit")
+        ensure_attribute(sign_in_button, "value", "Sign in")
+        sign_in_button.click()
+
+        logger.info("Waiting for authentication (again)")
+        no_button = wait.until(lambda x: x.find_element_by_id("idBtn_Back"))
+        ensure_attribute(no_button, "type", "button")
+        ensure_attribute(no_button, "value", "No")
+        no_button.click()
+
+        logo = wait.until(lambda x: x.find_element_by_id("O365_MainLink_TenantLogo"))
+        ensure_attribute(logo, "href", "http://buffalo.edu/")
         logger.info("Success")
 
     # GitHub automatically disables actions for inactive repos. To prevent
