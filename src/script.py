@@ -3,6 +3,7 @@
 import argparse
 import contextlib
 import datetime
+import importlib
 import logging
 import os
 from typing import Iterator
@@ -18,6 +19,8 @@ from plants.committer import Committer
 from plants.environment import Environment
 from plants.external import allow_external_calls
 from plants.logging import configure_logging
+
+import other
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -74,9 +77,9 @@ def main() -> None:
         driver.find_element(By.ID, "login-button").click()
 
         logger.info("Waiting for authentication")
-        wait.until(lambda x: x.find_element(By.ID, "i0118"))
 
-        password_input = driver.find_element(By.ID, "i0118")
+        # Outlook authentication page
+        password_input = wait.until(lambda x: x.find_element(By.ID, "i0118"))
         ensure_attribute(password_input, "name", "passwd")
         ensure_attribute(password_input, "type", "password")
         ensure_attribute(password_input, "placeholder", "Password")
@@ -88,14 +91,36 @@ def main() -> None:
         sign_in_button.click()
 
         logger.info("Waiting for authentication (again)")
+
+        # Outlook "save this browser" page
         no_button = wait.until(lambda x: x.find_element(By.ID, "idBtn_Back"))
         ensure_attribute(no_button, "type", "button")
         ensure_attribute(no_button, "value", "No")
         no_button.click()
 
+        # Inbox page
         logo = wait.until(lambda x: x.find_element(By.ID, "O365_MainLink_TenantLogo"))
         ensure_attribute(logo, "href", "http://buffalo.edu/")
         logger.info("Success")
+
+        # TODO
+        # if forward_unread_mail:
+        if False:
+            other.func(driver)
+            # i = 0
+            # while True:
+            #     i += 1
+            #     input(f"Attempt {i}")
+            #     try:
+            #         importlib.reload(other)
+            #     except SyntaxError as e:
+            #         logger.exception(e)
+            #     try:
+            #         other.func(driver)
+            #     except Exception as e:
+            #         logger.exception(e)
+
+        # raise RuntimeError("Bar")
 
     # GitHub automatically disables actions for inactive repos. To prevent
     # that, write the timestamp of the last successful run back to the repo.
