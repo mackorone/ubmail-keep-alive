@@ -8,6 +8,7 @@ import os
 from typing import Iterator
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.remote.webelement import WebElement
@@ -65,34 +66,34 @@ def main() -> None:
 
         logger.info("Waiting for redirect")
         wait = WebDriverWait(driver, timeout=10)
-        wait.until(lambda x: x.find_element_by_id("login-button"))
+        wait.until(lambda x: x.find_element(By.ID, "login-button"))
 
         logger.info("Submitting credentials")
-        driver.find_element_by_id("login").send_keys(username)
-        driver.find_element_by_id("password").send_keys(password)
-        driver.find_element_by_id("login-button").click()
+        driver.find_element(By.ID, "login").send_keys(username)
+        driver.find_element(By.ID, "password").send_keys(password)
+        driver.find_element(By.ID, "login-button").click()
 
         logger.info("Waiting for authentication")
-        wait.until(lambda x: x.find_element_by_id("i0118"))
+        wait.until(lambda x: x.find_element(By.ID, "i0118"))
 
-        password_input = driver.find_element_by_id("i0118")
+        password_input = driver.find_element(By.ID, "i0118")
         ensure_attribute(password_input, "name", "passwd")
         ensure_attribute(password_input, "type", "password")
         ensure_attribute(password_input, "placeholder", "Password")
         password_input.send_keys(password)
 
-        sign_in_button = driver.find_element_by_id("idSIButton9")
+        sign_in_button = driver.find_element(By.ID, "idSIButton9")
         ensure_attribute(sign_in_button, "type", "submit")
         ensure_attribute(sign_in_button, "value", "Sign in")
         sign_in_button.click()
 
         logger.info("Waiting for authentication (again)")
-        no_button = wait.until(lambda x: x.find_element_by_id("idBtn_Back"))
+        no_button = wait.until(lambda x: x.find_element(By.ID, "idBtn_Back"))
         ensure_attribute(no_button, "type", "button")
         ensure_attribute(no_button, "value", "No")
         no_button.click()
 
-        logo = wait.until(lambda x: x.find_element_by_id("O365_MainLink_TenantLogo"))
+        logo = wait.until(lambda x: x.find_element(By.ID, "O365_MainLink_TenantLogo"))
         ensure_attribute(logo, "href", "http://buffalo.edu/")
         logger.info("Success")
 
