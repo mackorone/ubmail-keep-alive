@@ -26,4 +26,4 @@ jobs:
         env:
           UBIT_USERNAME: ${{ secrets.UBIT_USERNAME }}
           UBIT_PASSWORD: ${{ secrets.UBIT_PASSWORD }}
-        run: python src/script.py --webdriver-executable-path geckodriver
+        run: python src/script.py --webdriver-executable-path geckodriver --forward-unread-mail
