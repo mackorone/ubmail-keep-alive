@@ -25,10 +25,14 @@ Thankfully, this chore can be automated.
 
 Once a week, a GitHub action runs `script.py`. The script uses
 [Selenium](https://www.selenium.dev/), a browser automation tool, to
-programmatically log into my UBmail account. My username and password are
+programmatically log into my UBmail account. The script also automatically
+forwards me all unread emails because, sadly, mail forwarding rules are no
+longer supported. My username, password, and "forward to" email are
 stored as repository secrets and passed to the script as environment variables.
 
 If you want to keep *your* `buffalo.edu` email address alive:
 1. Fork this repository
-1. Add `UBIT_USERNAME` and `UBIT_PASSWORD` repository secrets (via `Settings` > `Secrets` > `Actions`)
-1. Enable `GITHUB_TOKEN` "Read and write permissions" (via `Settings` > `Actions` > `General` > `Workflow permissions`)
+1. Add `UBIT_USERNAME`, `UBIT_PASSWORD`, and `FORWARD_TO_EMAIL` repository secrets
+   - Under `Settings` > `Secrets` > `Actions`
+1. Enable `GITHUB_TOKEN` "Read and write permissions"
+   - Under `Settings` > `Actions` > `General` > `Workflow permissions`
