@@ -32,6 +32,8 @@ def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Fi
         service=service,
         options=options,
     )
+    # Always wait at least 10 seconds before failing to find elements
+    driver.implicitly_wait(10)
     try:
         yield driver
     finally:
@@ -49,8 +51,7 @@ def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     driver.get("https://ubmail.buffalo.edu/cgi-bin/login.pl")
 
     logger.info("Waiting for redirect")
-    wait = WebDriverWait(driver, timeout=10)
-    wait.until(lambda x: x.find_element(By.ID, "login-button"))
+    driver.find_element(By.ID, "login-button")
 
     logger.info("Submitting credentials")
     driver.find_element(By.ID, "login").send_keys(username)
@@ -60,7 +61,7 @@ def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     logger.info("Waiting for authentication")
 
     # Outlook authentication page
-    password_input = wait.until(lambda x: x.find_element(By.ID, "i0118"))
+    password_input = driver.find_element(By.ID, "i0118")
     ensure_attribute(password_input, "name", "passwd")
     ensure_attribute(password_input, "type", "password")
     ensure_attribute(password_input, "placeholder", "Password")
@@ -74,37 +75,32 @@ def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     logger.info("Waiting for authentication (again)")
 
     # Outlook "save this browser" page
-    no_button = wait.until(lambda x: x.find_element(By.ID, "idBtn_Back"))
+    no_button = driver.find_element(By.ID, "idBtn_Back")
     ensure_attribute(no_button, "type", "button")
     ensure_attribute(no_button, "value", "No")
     no_button.click()
 
     # Inbox page
-    logo = wait.until(lambda x: x.find_element(By.ID, "O365_MainLink_TenantLogo"))
+    logo = driver.find_element(By.ID, "O365_MainLink_TenantLogo")
     ensure_attribute(logo, "href", "http://buffalo.edu/")
     logger.info("Successful login")
 
 
 def forward_unread_mail(driver: webdriver.Firefox) -> None:
-    wait = WebDriverWait(driver, timeout=10)
 
     logger.info("Clicking filter button")
-    wait.until(
-        lambda x: x.find_element(
-            By.XPATH,
-            (
-                '//div[@data-app-section="MessageList"]'
-                '//i[@data-icon-name="FilterRegular"]'
-            ),
-        )
+    driver.find_element(
+        By.XPATH,
+        (
+            '//div[@data-app-section="MessageList"]'
+            '//i[@data-icon-name="FilterRegular"]'
+        ),
     ).click()
 
     logger.info("Clicking 'Unread' button")
-    wait.until(
-        lambda x: x.find_element(
-            By.XPATH,
-            '//button[@name="Unread"]',
-        )
+    driver.find_element(
+        By.XPATH,
+        '//button[@name="Unread"]',
     ).click()
 
     logger.info("Checking for unread messages")
@@ -119,10 +115,8 @@ def forward_unread_mail(driver: webdriver.Firefox) -> None:
     except Exception:
         pass
 
-    elements = wait.until(
-        lambda x: x.find_elements(
-            By.XPATH, ('//div[@role="option" and starts-with(@aria-label,"Unread ")]')
-        )
+    elements = driver.find_elements(
+        By.XPATH, ('//div[@role="option" and starts-with(@aria-label,"Unread ")]')
     )
     num_messages = len(elements)
     logger.info(f"Found {num_messages} unread messages")
@@ -133,36 +127,28 @@ def forward_unread_mail(driver: webdriver.Firefox) -> None:
         element.click()
 
         logger.info("Clicking 'Forward' button")
-        wait.until(lambda x: x.find_element(By.ID, "read_ellipses_menu")).click()
-        forward_button = wait.until(
-            lambda x: x.find_element(
-                By.XPATH, '//button[@role="menuitem" and @aria-label="Forward"]'
-            )
+        driver.find_element(By.ID, "read_ellipses_menu").click()
+        forward_button = driver.find_element(
+            By.XPATH, '//button[@role="menuitem" and @aria-label="Forward"]'
         )
         # Hacky workaround for "not clickable because another element obscures it"
         # https://stackoverflow.com/a/63157469/3176152
         driver.execute_script("arguments[0].click();", forward_button)
 
         logger.info("Entering recipient")
-        wait.until(
-            lambda x: x.find_element(
-                By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
-            )
+        driver.find_element(
+            By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
         ).send_keys(Environment.get_env("FORWARD_TO_EMAIL"))
 
         logger.info("Clicking 'Send' button")
-        wait.until(
-            lambda x: x.find_element(
-                By.XPATH, '//div[@role="button" and @aria-label="Send"]'
-            )
+        driver.find_element(
+            By.XPATH, '//div[@role="button" and @aria-label="Send"]'
         ).click()
 
         logger.info("Marking message as read")
-        wait.until(lambda x: x.find_element(By.ID, "read_ellipses_menu")).click()
-        wait.until(
-            lambda x: x.find_element(
-                By.XPATH, '//button[@role="menuitem" and @aria-label="Mark as read"]'
-            )
+        driver.find_element(By.ID, "read_ellipses_menu").click()
+        driver.find_element(
+            By.XPATH, '//button[@role="menuitem" and @aria-label="Mark as read"]'
         ).click()
 
 
