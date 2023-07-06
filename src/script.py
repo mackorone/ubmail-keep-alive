@@ -5,6 +5,7 @@ import contextlib
 import datetime
 import logging
 import os
+import time
 from typing import Iterator
 
 from selenium import webdriver
@@ -96,6 +97,9 @@ def forward_unread_mail(driver: webdriver.Firefox) -> None:
             '//i[@data-icon-name="FilterRegular"]'
         ),
     ).click()
+
+    # This is finicky, sleep for 1s to prevent StaleElementReferenceException
+    time.sleep(1)
 
     logger.info("Clicking 'Unread' button")
     driver.find_element(
