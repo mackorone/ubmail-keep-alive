@@ -23,7 +23,7 @@ Thankfully, this chore can be automated.
 
 ## How it works
 
-Once a week, a GitHub action runs `script.py`. The script uses
+Once per day, a GitHub action runs `script.py`. The script uses
 [Selenium](https://www.selenium.dev/), a browser automation tool, to
 programmatically log into my UBmail account. The script also automatically
 forwards me all unread emails because, sadly, mail forwarding rules are no
