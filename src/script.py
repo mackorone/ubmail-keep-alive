@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
 import contextlib
 import datetime
 import logging
 import os
-import time
 from typing import Iterator
 
 from selenium import webdriver
@@ -13,12 +13,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from plants.committer import Committer
 from plants.environment import Environment
 from plants.external import allow_external_calls
 from plants.logging import configure_logging
+from plants.retry import retry
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -48,7 +50,22 @@ def ensure_attribute(element: WebElement, attribute: str, expected_value: str) -
         raise RuntimeError("Wrong {attribute}: {expected_value=} vs {actual_value=}")
 
 
-def login(driver: webdriver.Firefox, username: str, password: str) -> None:
+async def click_with_retries(
+    driver: webdriver.Firefox,
+    xpath: str,
+) -> None:
+    async def func() -> None:
+        wait = WebDriverWait(driver, 10)
+        element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+        # Hacky workaround for "not clickable because another element obscures it"
+        # https://stackoverflow.com/a/63157469/3176152
+        driver.execute_script("arguments[0].click();", element)
+
+    with retry(func=func, num_attempts=3, sleep_seconds=1) as wrapper:
+        await wrapper()
+
+
+async def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     logger.info("Going to UBmail page")
     driver.get("https://ubmail.buffalo.edu/cgi-bin/login.pl")
 
@@ -74,6 +91,7 @@ def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     ensure_attribute(sign_in_button, "value", "Sign in")
     sign_in_button.click()
 
+    logger.info("Submitting credentials (again)")
     logger.info("Waiting for authentication (again)")
 
     # Outlook "save this browser" page
@@ -88,25 +106,21 @@ def login(driver: webdriver.Firefox, username: str, password: str) -> None:
     logger.info("Successful login")
 
 
-def forward_unread_mail(driver: webdriver.Firefox) -> None:
-
+async def forward_unread_mail(driver: webdriver.Firefox) -> None:
     logger.info("Clicking filter button")
-    driver.find_element(
-        By.XPATH,
-        (
+    await click_with_retries(
+        driver=driver,
+        xpath=(
             '//div[@data-app-section="MessageList"]'
             '//i[@data-icon-name="FilterRegular"]'
         ),
-    ).click()
-
-    # This is finicky, sleep for 1s to prevent StaleElementReferenceException
-    time.sleep(1)
+    )
 
     logger.info("Clicking 'Unread' button")
-    driver.find_element(
-        By.XPATH,
-        '//button[@name="Unread"]',
-    ).click()
+    await click_with_retries(
+        driver=driver,
+        xpath='//button[@name="Unread"]',
+    )
 
     logger.info("Checking for unread messages")
     try:
@@ -132,13 +146,13 @@ def forward_unread_mail(driver: webdriver.Firefox) -> None:
         element.click()
 
         logger.info("Clicking 'Forward' button")
-        driver.find_element(By.ID, "read_ellipses_menu").click()
-        forward_button = driver.find_element(
-            By.XPATH, '//button[@role="menuitem" and @aria-label="Forward"]'
+        await click_with_retries(
+            driver=driver,
+            xpath='//button[@id="read_ellipses_menu"]',
         )
-        # Hacky workaround for "not clickable because another element obscures it"
-        # https://stackoverflow.com/a/63157469/3176152
-        driver.execute_script("arguments[0].click();", forward_button)
+        await click_with_retries(
+            driver=driver, xpath='//button[@role="menuitem" and @aria-label="Forward"]'
+        )
 
         logger.info("Entering recipient")
         driver.find_element(
@@ -146,18 +160,22 @@ def forward_unread_mail(driver: webdriver.Firefox) -> None:
         ).send_keys(Environment.get_env("FORWARD_TO_EMAIL"))
 
         logger.info("Clicking 'Send' button")
-        driver.find_element(
-            By.XPATH, '//div[@role="button" and @aria-label="Send"]'
-        ).click()
+        await click_with_retries(
+            driver=driver, xpath='//div[@role="button" and @aria-label="Send"]'
+        )
 
         logger.info("Marking message as read")
-        driver.find_element(By.ID, "read_ellipses_menu").click()
-        driver.find_element(
-            By.XPATH, '//button[@role="menuitem" and @aria-label="Mark as read"]'
-        ).click()
+        await click_with_retries(
+            driver=driver,
+            xpath='//button[@id="read_ellipses_menu"]',
+        )
+        await click_with_retries(
+            driver=driver,
+            xpath='//button[@role="menuitem" and @aria-label="Mark as read"]',
+        )
 
 
-def main() -> None:
+async def main() -> None:
     parser = argparse.ArgumentParser(description="UBmail login script")
     parser.add_argument("--webdriver-executable-path", required=True)
     parser.add_argument("--forward-unread-mail", action="store_true")
@@ -176,10 +194,10 @@ def main() -> None:
         headless=(not args.no_headless),
     ) as driver:
         logger.info("Attempting to login")
-        login(driver, username, password)
+        await login(driver, username, password)
         if args.forward_unread_mail:
             logger.info("Attempting to forward mail")
-            forward_unread_mail(driver)
+            await forward_unread_mail(driver)
 
     # GitHub automatically disables actions for inactive repos. To prevent
     # that, write the timestamp of the last successful run back to the repo.
@@ -194,5 +212,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     allow_external_calls()
-    configure_logging(auto_indent=True)
-    main()
+    configure_logging()
+    asyncio.run(main())
