@@ -20,6 +20,7 @@ from plants.environment import Environment
 from plants.external import allow_external_calls
 from plants.logging import configure_logging
 from plants.retry import AttemptFactory, retry
+from plants.sleep import sleep
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -35,8 +36,8 @@ def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Fi
         service=service,
         options=options,
     )
-    # Always wait at least 10 seconds before failing to find elements
-    driver.implicitly_wait(10)
+    # Always wait at least 5 seconds before failing to find elements
+    driver.implicitly_wait(5)
     try:
         yield driver
     finally:
@@ -211,6 +212,7 @@ async def main() -> None:
         if forwarding_address:
             logger.info("Attempting to forward mail")
             await forward_unread_mail(driver, forwarding_address)
+        await sleep(1)  # allow actions to finish before closing
 
     # GitHub automatically disables actions for inactive repos. To prevent
     # that, write the timestamp of the last successful run back to the repo.
