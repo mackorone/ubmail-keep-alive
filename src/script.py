@@ -50,19 +50,23 @@ def ensure_attribute(element: WebElement, attribute: str, expected_value: str) -
         raise RuntimeError("Wrong {attribute}: {expected_value=} vs {actual_value=}")
 
 
+async def click(
+    driver: webdriver.Firefox,
+    xpath: str,
+) -> None:
+    wait = WebDriverWait(driver, 1)
+    element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+    # Hacky workaround for "not clickable because another element obscures it"
+    # https://stackoverflow.com/a/63157469/3176152
+    driver.execute_script("arguments[0].click();", element)
+
+
 async def click_with_retries(
     driver: webdriver.Firefox,
     xpath: str,
 ) -> None:
-    async def func() -> None:
-        wait = WebDriverWait(driver, 10)
-        element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
-        # Hacky workaround for "not clickable because another element obscures it"
-        # https://stackoverflow.com/a/63157469/3176152
-        driver.execute_script("arguments[0].click();", element)
-
-    with retry(func=func, num_attempts=3, sleep_seconds=1) as wrapper:
-        await wrapper()
+    with retry(func=click, num_attempts=3, sleep_seconds=1) as wrapper:
+        await wrapper(driver, xpath)
 
 
 async def login(driver: webdriver.Firefox, username: str, password: str) -> None:
@@ -107,20 +111,23 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
 
 
 async def forward_unread_mail(driver: webdriver.Firefox) -> None:
-    logger.info("Clicking filter button")
-    await click_with_retries(
-        driver=driver,
-        xpath=(
-            '//div[@data-app-section="MessageList"]'
-            '//i[@data-icon-name="FilterRegular"]'
-        ),
-    )
+    async def _click_unread() -> None:
+        logger.info("Clicking filter button")
+        await click(
+            driver=driver,
+            xpath=(
+                '//div[@data-app-section="MessageList"]'
+                '//i[@data-icon-name="FilterRegular"]'
+            ),
+        )
+        logger.info("Clicking 'Unread' button")
+        await click(
+            driver=driver,
+            xpath='//button[@name="Unread"]',
+        )
 
-    logger.info("Clicking 'Unread' button")
-    await click_with_retries(
-        driver=driver,
-        xpath='//button[@name="Unread"]',
-    )
+    with retry(func=_click_unread, num_attempts=3, sleep_seconds=1) as wrapper:
+        await wrapper()
 
     logger.info("Checking for unread messages")
     try:
