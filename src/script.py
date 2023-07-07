@@ -19,7 +19,7 @@ from plants.committer import Committer
 from plants.environment import Environment
 from plants.external import allow_external_calls
 from plants.logging import configure_logging
-from plants.retry import retry
+from plants.retry import AttemptFactory, retry
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -104,31 +104,31 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     no_button.click()
 
     # Inbox page
-    logo = driver.find_element(By.ID, "O365_MainLink_TenantLogo")
-    ensure_attribute(logo, "href", "http://buffalo.edu/")
-    logger.info("Successful login")
+    for attempt in AttemptFactory(num_attempts=3, sleep_seconds=1):
+        async with attempt:
+            logo = driver.find_element(By.ID, "O365_MainLink_TenantLogo")
+            ensure_attribute(logo, "href", "http://buffalo.edu/")
+            logger.info("Successful login")
 
 
 async def forward_unread_mail(
     driver: webdriver.Firefox, forwarding_address: str
 ) -> None:
-    async def _click_unread() -> None:
-        logger.info("Clicking filter button")
-        await click(
-            driver=driver,
-            xpath=(
-                '//div[@data-app-section="MessageList"]'
-                '//i[@data-icon-name="FilterRegular"]'
-            ),
-        )
-        logger.info("Clicking 'Unread' button")
-        await click(
-            driver=driver,
-            xpath='//button[@name="Unread"]',
-        )
-
-    with retry(func=_click_unread, num_attempts=3, sleep_seconds=1) as wrapper:
-        await wrapper()
+    for attempt in AttemptFactory(num_attempts=3, sleep_seconds=1):
+        async with attempt:
+            logger.info("Clicking filter button")
+            await click(
+                driver=driver,
+                xpath=(
+                    '//div[@data-app-section="MessageList"]'
+                    '//i[@data-icon-name="FilterRegular"]'
+                ),
+            )
+            logger.info("Clicking 'Unread' button")
+            await click(
+                driver=driver,
+                xpath='//button[@name="Unread"]',
+            )
 
     logger.info("Checking for unread messages")
     try:
