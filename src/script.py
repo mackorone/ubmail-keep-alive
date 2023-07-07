@@ -27,7 +27,8 @@ logger: logging.Logger = logging.getLogger(__name__)
 def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Firefox]:
     service = Service(executable_path=executable_path)
     options = Options()
-    options.headless = headless
+    if headless:
+        options.add_argument("-headless")
     # pyre-fixme[28]
     driver = webdriver.Firefox(
         service=service,
