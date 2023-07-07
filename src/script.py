@@ -5,7 +5,6 @@ import asyncio
 import contextlib
 import datetime
 import logging
-import os
 from typing import Iterator
 
 from selenium import webdriver
@@ -110,7 +109,9 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     logger.info("Successful login")
 
 
-async def forward_unread_mail(driver: webdriver.Firefox) -> None:
+async def forward_unread_mail(
+    driver: webdriver.Firefox, forwarding_address: str
+) -> None:
     async def _click_unread() -> None:
         logger.info("Clicking filter button")
         await click(
@@ -164,7 +165,7 @@ async def forward_unread_mail(driver: webdriver.Firefox) -> None:
         logger.info("Entering recipient")
         driver.find_element(
             By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
-        ).send_keys(Environment.get_env("FORWARD_TO_EMAIL"))
+        ).send_keys(forwarding_address)
 
         logger.info("Clicking 'Send' button")
         await click_with_retries(
@@ -190,10 +191,15 @@ async def main() -> None:
     args = parser.parse_args()
 
     logger.info("Reading credentials")
-    username = os.getenv("UBIT_USERNAME")
-    password = os.getenv("UBIT_PASSWORD")
+    username = Environment.get_env("UBIT_USERNAME")
+    password = Environment.get_env("UBIT_PASSWORD")
     assert username
     assert password
+
+    forwarding_address = None
+    if args.forward_unread_mail:
+        forwarding_address = Environment.get_env("FORWARD_TO_EMAIL")
+        assert forwarding_address
 
     logger.info("Starting WebDriver")
     with get_driver(
@@ -202,9 +208,9 @@ async def main() -> None:
     ) as driver:
         logger.info("Attempting to login")
         await login(driver, username, password)
-        if args.forward_unread_mail:
+        if forwarding_address:
             logger.info("Attempting to forward mail")
-            await forward_unread_mail(driver)
+            await forward_unread_mail(driver, forwarding_address)
 
     # GitHub automatically disables actions for inactive repos. To prevent
     # that, write the timestamp of the last successful run back to the repo.
