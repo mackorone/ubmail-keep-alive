@@ -120,15 +120,12 @@ async def forward_unread_mail(
             logger.info("Clicking filter button")
             await click(
                 driver=driver,
-                xpath=(
-                    '//div[@data-app-section="MessageList"]'
-                    '//i[@data-icon-name="FilterRegular"]'
-                ),
+                xpath='//button[@id="menurn" or @aria-label="Filter"]',
             )
             logger.info("Clicking 'Unread' button")
             await click(
                 driver=driver,
-                xpath='//button[@name="Unread"]',
+                xpath='//div[@role="menuitemradio" and @title="Unread"]',
             )
 
     logger.info("Checking for unread messages")
