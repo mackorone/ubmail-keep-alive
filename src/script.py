@@ -47,7 +47,7 @@ def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Fi
 def ensure_attribute(element: WebElement, attribute: str, expected_value: str) -> None:
     actual_value = element.get_attribute(attribute)
     if actual_value != expected_value:
-        raise RuntimeError("Wrong {attribute}: {expected_value=} vs {actual_value=}")
+        raise RuntimeError(f"Wrong {attribute}: {expected_value=} vs {actual_value=}")
 
 
 async def click(
@@ -97,6 +97,12 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
 
     logger.info("Submitting credentials (again)")
     logger.info("Waiting for authentication (again)")
+
+    # Outlook "You're about to sign in" page
+    continue_button = driver.find_element(By.ID, "idSIButton9")
+    ensure_attribute(continue_button, "type", "submit")
+    ensure_attribute(continue_button, "value", "Continue")
+    continue_button.click()
 
     # Outlook "save this browser" page
     no_button = driver.find_element(By.ID, "idBtn_Back")
