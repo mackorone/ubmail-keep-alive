@@ -1,6 +1,4 @@
 -r requirements.in
 
-black
-flake8
-isort
 pyre-check
+ruff
