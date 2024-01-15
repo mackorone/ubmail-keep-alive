@@ -26,12 +26,11 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def get_driver(executable_path: str, *, headless: bool) -> Iterator[webdriver.Firefox]:
-    service = Service(executable_path=executable_path)
+def get_driver(*, headless: bool) -> Iterator[webdriver.Firefox]:
+    service = Service()
     options = Options()
     if headless:
         options.add_argument("-headless")
-    # pyre-fixme[28]
     driver = webdriver.Firefox(
         service=service,
         options=options,
@@ -186,9 +185,8 @@ async def forward_unread_mail(
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="UBmail login script")
-    parser.add_argument("--webdriver-executable-path", required=True)
     parser.add_argument("--forward-unread-mail", action="store_true")
-    parser.add_argument("--no-headless", action="store_true")
+    parser.add_argument("--show-browser", action="store_true")
     args = parser.parse_args()
 
     logger.info("Reading credentials")
@@ -204,8 +202,7 @@ async def main() -> None:
 
     logger.info("Starting WebDriver")
     with get_driver(
-        args.webdriver_executable_path,
-        headless=(not args.no_headless),
+        headless=not args.show_browser,
     ) as driver:
         try:
             logger.info("Attempting to login")
@@ -215,7 +212,7 @@ async def main() -> None:
                 await forward_unread_mail(driver, forwarding_address)
             await sleep(1)  # allow actions to finish before closing
         except Exception:
-            if args.no_headless:
+            if args.show_browser:
                 logger.exception("Caught exception")
                 logger.info("Press CTRL-C to exit")
                 await sleep(86400)
