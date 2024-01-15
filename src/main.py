@@ -160,10 +160,7 @@ async def forward_unread_mail(
         logger.info("Clicking 'Forward' button")
         await click_with_retries(
             driver=driver,
-            xpath='//button[@id="read_ellipses_menu"]',
-        )
-        await click_with_retries(
-            driver=driver, xpath='//button[@role="menuitem" and @aria-label="Forward"]'
+            xpath='//button[@aria-label="Forward"]',
         )
 
         logger.info("Entering recipient")
@@ -179,7 +176,7 @@ async def forward_unread_mail(
         logger.info("Marking message as read")
         await click_with_retries(
             driver=driver,
-            xpath='//button[@id="read_ellipses_menu"]',
+            xpath='//button[@aria-label="More actions"]',
         )
         await click_with_retries(
             driver=driver,
@@ -210,12 +207,19 @@ async def main() -> None:
         args.webdriver_executable_path,
         headless=(not args.no_headless),
     ) as driver:
-        logger.info("Attempting to login")
-        await login(driver, username, password)
-        if forwarding_address:
-            logger.info("Attempting to forward mail")
-            await forward_unread_mail(driver, forwarding_address)
-        await sleep(1)  # allow actions to finish before closing
+        try:
+            logger.info("Attempting to login")
+            await login(driver, username, password)
+            if forwarding_address:
+                logger.info("Attempting to forward mail")
+                await forward_unread_mail(driver, forwarding_address)
+            await sleep(1)  # allow actions to finish before closing
+        except Exception:
+            if args.no_headless:
+                logger.exception("Caught exception")
+                logger.info("Press CTRL-C to exit")
+                await sleep(86400)
+            raise
 
     # GitHub automatically disables actions for inactive repos. To prevent
     # that, write the timestamp of the last successful run back to the repo.
