@@ -164,7 +164,7 @@ async def forward_unread_mail(
 
         logger.info("Entering recipient")
         driver.find_element(
-            By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
+            By.XPATH, '//div[@role="combobox" and @aria-label="To"]'
         ).send_keys(forwarding_address)
 
         logger.info("Clicking 'Send' button")
@@ -175,11 +175,7 @@ async def forward_unread_mail(
         logger.info("Marking message as read")
         await click_with_retries(
             driver=driver,
-            xpath='//button[@id="read_ellipses_menu" or @aria-label="More mail actions"]',
-        )
-        await click_with_retries(
-            driver=driver,
-            xpath='//button[@role="menuitem" and @aria-label="Mark as read"]',
+            xpath='//button[@aria-label="Read / Unread"]',
         )
 
 
