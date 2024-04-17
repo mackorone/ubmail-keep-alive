@@ -2,15 +2,11 @@
 
 import argparse
 import asyncio
-import contextlib
 import datetime
 import logging
-from typing import Iterator
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -21,26 +17,9 @@ from plants.external import allow_external_calls
 from plants.logging import configure_logging
 from plants.retry import AttemptFactory, retry
 from plants.sleep import sleep
+from plants.webdriver import get_firefox_webdriver
 
 logger: logging.Logger = logging.getLogger(__name__)
-
-
-@contextlib.contextmanager
-def get_driver(*, headless: bool) -> Iterator[webdriver.Firefox]:
-    service = Service()
-    options = Options()
-    if headless:
-        options.add_argument("-headless")
-    driver = webdriver.Firefox(
-        service=service,
-        options=options,
-    )
-    # Always wait at least 5 seconds before failing to find elements
-    driver.implicitly_wait(5)
-    try:
-        yield driver
-    finally:
-        driver.quit()
 
 
 def ensure_attribute(element: WebElement, attribute: str, expected_value: str) -> None:
@@ -197,9 +176,11 @@ async def main() -> None:
         assert forwarding_address
 
     logger.info("Starting WebDriver")
-    with get_driver(
+    with get_firefox_webdriver(
         headless=not args.show_browser,
     ) as driver:
+        # Always wait at least 5 seconds before failing to find elements
+        driver.implicitly_wait(5)
         try:
             logger.info("Attempting to login")
             await login(driver, username, password)
