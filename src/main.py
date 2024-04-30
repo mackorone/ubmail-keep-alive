@@ -2,11 +2,16 @@
 
 import argparse
 import asyncio
+import contextlib
 import datetime
 import logging
+from typing import Iterator
 
 from selenium import webdriver
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -17,7 +22,6 @@ from plants.external import allow_external_calls
 from plants.logging import configure_logging
 from plants.retry import AttemptFactory, retry
 from plants.sleep import sleep
-from plants.webdriver import get_firefox_webdriver
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -156,6 +160,22 @@ async def forward_unread_mail(
             driver=driver,
             xpath='//button[@aria-label="Read / Unread"]',
         )
+
+
+@contextlib.contextmanager
+def get_firefox_webdriver(*, headless: bool) -> Iterator[Firefox]:
+    service = Service()
+    options = Options()
+    if headless:
+        options.add_argument("-headless")
+    driver = Firefox(
+        service=service,
+        options=options,
+    )
+    try:
+        yield driver
+    finally:
+        driver.quit()
 
 
 async def main() -> None:
