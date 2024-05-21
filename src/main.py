@@ -147,7 +147,7 @@ async def forward_unread_mail(
 
         logger.info("Entering recipient")
         driver.find_element(
-            By.XPATH, '//div[@role="combobox" and @aria-label="To"]'
+            By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
         ).send_keys(forwarding_address)
 
         logger.info("Clicking 'Send' button")
