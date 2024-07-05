@@ -81,10 +81,11 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     logger.info("Waiting for authentication (again)")
 
     # Outlook "You're about to sign in" page
-    continue_button = driver.find_element(By.ID, "idSIButton9")
-    ensure_attribute(continue_button, "type", "submit")
-    ensure_attribute(continue_button, "value", "Continue")
-    continue_button.click()
+    if False:
+        continue_button = driver.find_element(By.ID, "idSIButton9")
+        ensure_attribute(continue_button, "type", "submit")
+        ensure_attribute(continue_button, "value", "Continue")
+        continue_button.click()
 
     # Outlook "save this browser" page
     no_button = driver.find_element(By.ID, "idBtn_Back")
