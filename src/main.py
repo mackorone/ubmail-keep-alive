@@ -141,15 +141,17 @@ async def forward_unread_mail(
         element.click()
 
         logger.info("Clicking 'Forward' button")
-        await click_with_retries(
-            driver=driver,
-            xpath='//button[@aria-label="Forward"]',
-        )
-
-        logger.info("Entering recipient")
-        driver.find_element(
-            By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
-        ).send_keys(forwarding_address)
+        # Clicking "Forward" doesn't always work the first time, so try again
+        for attempt in AttemptFactory(num_attempts=3, sleep_seconds=1):
+            async with attempt:
+                await click_with_retries(
+                    driver=driver,
+                    xpath='//button[@aria-label="Forward"]',
+                )
+                logger.info("Attempting to enter recipient")
+                driver.find_element(
+                    By.XPATH, '//div[@role="textbox" and @aria-label="To"]'
+                ).send_keys(forwarding_address)
 
         logger.info("Clicking 'Send' button")
         await click_with_retries(
