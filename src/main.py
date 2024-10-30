@@ -155,7 +155,7 @@ async def forward_unread_mail(
 
         logger.info("Clicking 'Send' button")
         await click_with_retries(
-            driver=driver, xpath='//div[@role="button" and @aria-label="Send"]'
+            driver=driver, xpath='//button[@type="button" and @aria-label="Send"]'
         )
 
         logger.info("Marking message as read")
