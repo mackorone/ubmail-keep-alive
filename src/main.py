@@ -93,6 +93,16 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     ensure_attribute(no_button, "value", "No")
     no_button.click()
 
+    # "Pick an account"
+    account_div = driver.find_element(
+        By.XPATH,
+        (
+            f'//div[starts-with(@data-test-id, "{username}") and '
+            f'starts-with(@aria-label, "Sign in with {username}")]'
+        )
+    )
+    account_div.click()
+
     # Inbox page
     for attempt in AttemptFactory(num_attempts=3, sleep_seconds=1):
         async with attempt:
