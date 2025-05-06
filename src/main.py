@@ -66,11 +66,25 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     logger.info("Waiting for authentication")
 
     # Outlook authentication page
-    password_input = driver.find_element(By.ID, "i0118")
-    ensure_attribute(password_input, "name", "passwd")
-    ensure_attribute(password_input, "type", "password")
-    ensure_attribute(password_input, "placeholder", "Password")
-    password_input.send_keys(password)
+    email_input = driver.find_element(By.ID, "i0116")
+    ensure_attribute(email_input, "name", "loginfmt")
+    ensure_attribute(email_input, "type", "email")
+    ensure_attribute(email_input, "autocomplete", "username")
+    email_input.send_keys(f"{username}@buffalo.edu")
+
+    next_button = driver.find_element(By.ID, "idSIButton9")
+    ensure_attribute(next_button, "type", "submit")
+    ensure_attribute(next_button, "value", "Next")
+    next_button.click()
+
+    # Try twice, to give the page time to load
+    for attempt in AttemptFactory(num_attempts=2, sleep_seconds=1):
+        async with attempt:
+            password_input = driver.find_element(By.ID, "i0118")
+            ensure_attribute(password_input, "name", "passwd")
+            ensure_attribute(password_input, "type", "password")
+            ensure_attribute(password_input, "placeholder", "Password")
+            password_input.send_keys(password)
 
     sign_in_button = driver.find_element(By.ID, "idSIButton9")
     ensure_attribute(sign_in_button, "type", "submit")
@@ -92,16 +106,6 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     ensure_attribute(no_button, "type", "button")
     ensure_attribute(no_button, "value", "No")
     no_button.click()
-
-    # "Pick an account"
-    account_div = driver.find_element(
-        By.XPATH,
-        (
-            f'//div[starts-with(@data-test-id, "{username}") and '
-            f'starts-with(@aria-label, "Sign in with {username}")]'
-        )
-    )
-    account_div.click()
 
     # Inbox page
     for attempt in AttemptFactory(num_attempts=3, sleep_seconds=1):
