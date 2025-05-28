@@ -55,16 +55,6 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     logger.info("Going to UBmail page")
     driver.get("https://ubmail.buffalo.edu/cgi-bin/login.pl")
 
-    logger.info("Waiting for redirect")
-    driver.find_element(By.ID, "login-button")
-
-    logger.info("Submitting credentials")
-    driver.find_element(By.ID, "login").send_keys(username)
-    driver.find_element(By.ID, "password").send_keys(password)
-    driver.find_element(By.ID, "login-button").click()
-
-    logger.info("Waiting for authentication")
-
     # Outlook authentication page
     email_input = driver.find_element(By.ID, "i0116")
     ensure_attribute(email_input, "name", "loginfmt")
