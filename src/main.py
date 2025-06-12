@@ -59,7 +59,7 @@ async def login(driver: webdriver.Firefox, username: str, password: str) -> None
     email_input = driver.find_element(By.ID, "i0116")
     ensure_attribute(email_input, "name", "loginfmt")
     ensure_attribute(email_input, "type", "email")
-    ensure_attribute(email_input, "autocomplete", "username")
+    ensure_attribute(email_input, "autocomplete", "username webauthn")
     email_input.send_keys(f"{username}@buffalo.edu")
 
     next_button = driver.find_element(By.ID, "idSIButton9")
