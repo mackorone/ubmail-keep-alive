@@ -78,8 +78,6 @@ typing-inspect==0.9.0
     #   pyre-check
     #   pyre-extensions
 urllib3[socks]==2.2.1
-    # via
-    #   selenium
-    #   urllib3
+    # via selenium
 wsproto==1.2.0
     # via trio-websocket
